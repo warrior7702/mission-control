@@ -361,6 +361,23 @@ app.post('/api/schedules/create', async (req, res) => {
 });
 
 // ============================================================================
+// DEPLOY WEBHOOK
+// ============================================================================
+
+app.post('/webhook/deploy', (req, res) => {
+  const { ref, sha } = req.body || {};
+  console.log(`🔄 Deploy webhook triggered — ref: ${ref}, sha: ${sha?.slice(0, 7)}`);
+  
+  res.json({ received: true, pulling: true });
+  
+  // Pull and restart in background
+  const deployScript = path.join(__dirname, '../deploy.sh');
+  exec(`${deployScript} > /tmp/deploy.log 2>&1 &`, (err) => {
+    if (err) console.error('Deploy failed:', err);
+  });
+});
+
+// ============================================================================
 // SERVER START
 // ============================================================================
 

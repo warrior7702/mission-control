@@ -1,0 +1,16 @@
+name: Deploy to Mission Control
+
+on:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify deployment server
+        run: |
+          curl -s -X POST "${{ secrets.DEPLOY_WEBHOOK }}" \
+            -H "Content-Type: application/json" \
+            -d '{"ref":"${{ github.ref }}","sha":"${{ github.sha }}"}' || true
+        continue-on-error: true
