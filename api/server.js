@@ -248,6 +248,17 @@ app.get('/api/email', async (req, res) => { res.json(await getEmailStatus()); })
 app.get('/api/agents', async (req, res) => { res.json(await getAgentStatus()); });
 app.get('/api/health', async (req, res) => { res.json(await getSystemHealth()); });
 
+app.get('/api/monthly-stats', async (req, res) => {
+  try {
+    const { stdout } = await execAsync(
+      `cd ${WORKSPACE} && python3 scripts/clickup-monthly-stats.py --json 2>/dev/null || echo '{"total_closed":0}'`
+    );
+    res.json(JSON.parse(stdout));
+  } catch (error) {
+    res.json({ total_closed: 0, by_department: {}, error: error.message });
+  }
+});
+
 // ============================================================================
 // ACTIONS
 // ============================================================================
