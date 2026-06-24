@@ -399,6 +399,100 @@
     }
 
     /* --- Trend Graph Styles --- */
+    .agent-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .agent-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      border-left: 3px solid transparent;
+      transition: all 0.2s;
+    }
+    .agent-card.online { border-left-color: #10b981; }
+    .agent-card.offline { border-left-color: #6b7280; opacity: 0.7; }
+    .agent-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #004da8, #1B365F);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+    .agent-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .agent-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+      flex-wrap: wrap;
+    }
+    .agent-status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .agent-status-dot.online { background: #10b981; box-shadow: 0 0 6px #10b981; }
+    .agent-status-dot.away { background: #f59e0b; box-shadow: 0 0 6px #f59e0b; }
+    .agent-status-dot.offline { background: #ef4444; }
+    .agent-task {
+      font-size: 0.85rem;
+      color: #9ca3af;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .agent-meta {
+      font-size: 0.75rem;
+      color: #6b7280;
+      margin-top: 4px;
+    }
+    .agent-caps {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 6px;
+    }
+    .cap-tag {
+      background: rgba(0, 77, 168, 0.25);
+      color: #75D3F2;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+    }
+    .agent-history {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      font-size: 0.8rem;
+      color: #6b7280;
+    }
+    .agent-empty-tip {
+      text-align: center;
+      padding: 20px;
+      color: #6b7280;
+      font-size: 0.85rem;
+    }
+    .agent-empty-tip code {
+      background: rgba(0, 77, 168, 0.3);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #75D3F2;
+      font-family: monospace;
+    }
     .trend-controls {
       display: flex;
       gap: 8px;
@@ -1261,21 +1355,72 @@
       `;
     }
 
-    function renderAgents(agents) {
+    function renderAgents(agentsData) {
       const container = document.getElementById('agents-content');
+      const agents = agentsData.agents || [];
+      const message = agentsData.message || '';
 
-      if (!agents.agents || agents.agents.length === 0) {
-        container.innerHTML = '<div class="empty">No recent activity</div>';
+      if (!agents || agents.length === 0) {
+        container.innerHTML = `
+          <div class="agent-empty-tip">
+            <div style="font-size: 2rem; margin-bottom: 8px;">🤖</div>
+            <div>No agent activity recorded yet.</div>
+            <div style="margin-top: 8px;">
+              Agents can check in via <code>POST /api/agent-activity</code>
+            </div>
+            ${message ? `<div style="margin-top: 8px; color: #f59e0b;">Note: ${message}</div>` : ''}
+          </div>
+        `;
         return;
       }
 
-      container.innerHTML = agents.agents.map(agent => `
-        <div class="agent-entry">
-          <div class="agent-time">${agent.time}</div>
-          <div class="agent-name">${agent.agent}</div>
-          <div class="agent-action">${agent.title}</div>
-        </div>
-      `).join('');
+      container.innerHTML = agents.map(agent => {
+        const isOnline = agent.status === 'online';
+        const minutes = agent.minutesSince || 0;
+        const timeAgo = minutes < 1 ? 'Just now' : 
+                        minutes < 60 ? `${minutes}m ago` :
+                        minutes < 1440 ? `${Math.floor(minutes/60)}h ago` :
+                        `${Math.floor(minutes/1440)}d ago`;
+        
+        const statusClass = isOnline ? 'online' : 'offline';
+        const dotClass = isOnline ? 'online' : 'offline';
+        const emoji = getAgentEmoji(agent.agentId);
+        
+        const capabilitiesHtml = (agent.capabilities || []).slice(0, 3).map(cap => 
+          `<span class="cap-tag">${cap}</span>`
+        ).join('');
+        
+        const historyHtml = (agent.history || []).slice(0, 2).map(h => {
+          const hTime = new Date(h.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+          return `<div>${hTime} — ${h.details}</div>`;
+        }).join('');
+
+        return `
+          <div class="agent-card ${statusClass}">
+            <div class="agent-avatar">${emoji}</div>
+            <div class="agent-info">
+              <div class="agent-header">
+                <span class="agent-status-dot ${dotClass}"></span>
+                <strong>${agent.name}</strong>
+                <span style="color: #6b7280; font-size: 0.8rem;">${timeAgo}</span>
+              </div>
+              <div class="agent-task">${agent.currentTask || 'Idle'}</div>
+              ${agent.instanceId ? `<div class="agent-meta">🖥️ ${agent.instanceId}</div>` : ''}
+              ${capabilitiesHtml ? `<div class="agent-caps">${capabilitiesHtml}</div>` : ''}
+              ${historyHtml ? `<div class="agent-history">${historyHtml}</div>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function getAgentEmoji(agentId) {
+      const emojis = {
+        cornerstone: '🪨', scout: '📡', doory: '🔧',
+        spot: '📹', sentinel: '🛡️', bob: '🦦',
+        dubya: '🎯', monty: '🐍'
+      };
+      return emojis[agentId?.toLowerCase()] || '🤖';
     }
 
     function renderHealth(health) {

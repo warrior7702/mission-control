@@ -22,6 +22,83 @@ const CACHE_TTL = 60000; // 60 second cache
 // ============================================================================
 const cache = new Map();
 
+// ============================================================================
+// AGENT ACTIVITY LOG
+// ============================================================================
+const AGENT_LOG_FILE = WORKSPACE + '/.agent-activity.json';
+
+function loadAgentLog() {
+  try {
+    if (fs.existsSync(AGENT_LOG_FILE)) {
+      return JSON.parse(fs.readFileSync(AGENT_LOG_FILE, 'utf8'));
+    }
+  } catch (e) { /* ignore */ }
+  return {};
+}
+
+function saveAgentLog(log) {
+  try {
+    fs.writeFileSync(AGENT_LOG_FILE, JSON.stringify(log, null, 2));
+  } catch (e) { console.error('Failed to save agent log:', e); }
+}
+
+function recordAgentActivity(agentId, data) {
+  const log = loadAgentLog();
+  if (!log[agentId]) {
+    log[agentId] = { history: [] };
+  }
+  log[agentId].lastSeen = new Date().toISOString();
+  log[agentId].status = data.status || 'unknown';
+  log[agentId].currentTask = data.currentTask || 'Idle';
+  log[agentId].capabilities = data.capabilities || [];
+  log[agentId].instanceId = data.instanceId || 'unknown';
+  
+  // Keep last 50 entries
+  log[agentId].history.unshift({
+    timestamp: new Date().toISOString(),
+    action: data.action || 'heartbeat',
+    details: data.currentTask || 'Active'
+  });
+  if (log[agentId].history.length > 50) {
+    log[agentId].history = log[agentId].history.slice(0, 50);
+  }
+  
+  saveAgentLog(log);
+}
+
+function getAgentStatusV2() {
+  const log = loadAgentLog();
+  const now = Date.now();
+  const agents = [];
+  
+  Object.entries(log).forEach(([agentId, data]) => {
+    const lastSeen = data.lastSeen ? new Date(data.lastSeen).getTime() : 0;
+    const minutesSince = Math.floor((now - lastSeen) / 60000);
+    const isOnline = minutesSince < 5; // Consider offline after 5 minutes
+    
+    agents.push({
+      agentId,
+      name: agentId.charAt(0).toUpperCase() + agentId.slice(1),
+      status: isOnline ? (data.status || 'online') : 'offline',
+      lastSeen: data.lastSeen,
+      minutesSince,
+      currentTask: data.currentTask || 'Idle',
+      capabilities: data.capabilities || [],
+      instanceId: data.instanceId || 'unknown',
+      history: (data.history || []).slice(0, 5) // Last 5 actions
+    });
+  });
+  
+  // Sort by online first, then by last seen
+  agents.sort((a, b) => {
+    if (a.status === 'offline' && b.status !== 'offline') return 1;
+    if (a.status !== 'offline' && b.status === 'offline') return -1;
+    return (b.lastSeen || 0) - (a.lastSeen || 0);
+  });
+  
+  return { agents, total: agents.length };
+}
+
 function getCache(key) {
   const entry = cache.get(key);
   if (entry && Date.now() - entry.ts < CACHE_TTL) {
@@ -147,6 +224,14 @@ async function getAgentStatus() {
   const cached = getCache('agents');
   if (cached) return cached;
 
+  // Try v2 agent log first
+  const v2 = getAgentStatusV2();
+  if (v2.total > 0) {
+    setCache('agents', v2);
+    return v2;
+  }
+
+  // Fallback to shared knowledge markdown
   try {
     const knowledgeFile = WORKSPACE + '/shared-brain/shared-knowledge.md';
     if (!fs.existsSync(knowledgeFile)) {
@@ -247,6 +332,16 @@ app.get('/api/schedules', async (req, res) => { res.json(await getDoorSchedules(
 app.get('/api/email', async (req, res) => { res.json(await getEmailStatus()); });
 app.get('/api/agents', async (req, res) => { res.json(await getAgentStatus()); });
 app.get('/api/health', async (req, res) => { res.json(await getSystemHealth()); });
+
+// Agent heartbeat / activity endpoint
+app.post('/api/agent-activity', (req, res) => {
+  const { agentId, status, currentTask, capabilities, instanceId, action } = req.body;
+  if (!agentId) {
+    return res.status(400).json({ error: 'agentId required' });
+  }
+  recordAgentActivity(agentId, { status, currentTask, capabilities, instanceId, action });
+  res.json({ success: true, recorded: agentId });
+});
 
 app.get('/api/monthly-stats', async (req, res) => {
   try {
