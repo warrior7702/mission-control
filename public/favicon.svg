@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- FBCA Mission Control Favicon -->
+  <!-- Dark blue background (FBCA brand) -->
+  <rect width="100" height="100" fill="#1B365F" rx="20"/>
+  
+  <!-- Rocket icon (Mission Control theme) -->
+  <g transform="translate(50, 50)">
+    <!-- Rocket body -->
+    <path d="M -8 -25 L -8 10 Q -8 15 0 20 Q 8 15 8 10 L 8 -25 Q 8 -30 0 -35 Q -8 -30 -8 -25 Z" 
+          fill="#75D3F2" stroke="#004da8" stroke-width="1.5"/>
+    
+    <!-- Window -->
+    <circle cx="0" cy="-10" r="6" fill="#004da8" opacity="0.6"/>
+    <circle cx="0" cy="-10" r="4" fill="#DDE5FD"/>
+    
+    <!-- Fins -->
+    <path d="M -8 5 L -18 15 L -8 15 Z" fill="#004da8"/>
+    <path d="M 8 5 L 18 15 L 8 15 Z" fill="#004da8"/>
+    
+    <!-- Flame -->
+    <ellipse cx="0" cy="22" rx="6" ry="8" fill="#f59e0b" opacity="0.8"/>
+    <ellipse cx="0" cy="24" rx="4" ry="6" fill="#fbbf24" opacity="0.9"/>
+  </g>
+</svg>
