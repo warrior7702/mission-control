@@ -2327,10 +2327,18 @@ function runHealthAction(script) {
     async function fetchUser() {
       try {
         const response = await fetch(`${API_BASE}/user`);
+        if (response.status === 401) {
+          // Not authenticated, redirect to login
+          window.location.href = '/auth/login';
+          return;
+        }
         if (response.ok) {
           const user = await response.json();
           currentUserName = user.firstName || user.displayName || 'User';
           updateHeader();
+        } else {
+          console.error('Failed to fetch user:', response.status);
+          currentUserName = 'User';
         }
       } catch (error) {
         console.error('Failed to fetch user:', error);

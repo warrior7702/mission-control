@@ -66,12 +66,17 @@ if (authConfig) {
 function ensureAuthenticated(req, res, next) {
   if (!authConfig) {
     // SSO not configured, allow through (dev mode)
-    req.user = { displayName: 'Billy', email: 'billy.nelms@fbca.org' };
+    req.user = { displayName: 'Billy', email: 'billy.nelms@fbca.org', firstName: 'Billy' };
     return next();
   }
   
   if (req.isAuthenticated()) {
     return next();
+  }
+  
+  // API requests return 401 instead of redirecting
+  if (req.path.startsWith('/api/')) {
+    return res.status(401).json({ error: 'Authentication required', authenticated: false });
   }
   
   // Store original URL for redirect after login
