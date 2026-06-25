@@ -1781,10 +1781,10 @@
       }
       
       const deptConfig = {
-        'Unassigned': { icon: '🔴', color: '#F87171', class: 'unassigned' },
-        'IT': { icon: '💻', color: '#60A5FA', class: 'it' },
-        'Maintenance': { icon: '🔧', color: '#FBBF24', class: 'maintenance' },
-        'Cleaning': { icon: '🧹', color: '#34D399', class: 'cleaning' }
+        'Unassigned': { icon: '🔴', color: '#F87171', class: 'unassigned' },  // --accent-red
+        'IT': { icon: '💻', color: '#3b82f6', class: 'it' },                  // Matches dept-header.it
+        'Maintenance': { icon: '🔧', color: '#FBBF24', class: 'maintenance' }, // --accent-amber
+        'Cleaning': { icon: '🧹', color: '#34D399', class: 'cleaning' }       // --accent-green
       };
       
       // Build pie chart
@@ -1870,17 +1870,28 @@
       `;
     }
     
+    let currentExpandedDept = null;
+    
     function showDeptTickets(dept) {
       if (!currentTicketsData) return;
       
       const deptTickets = currentTicketsData.departments[dept] || [];
       const detailContainer = document.getElementById('dept-detail');
       
-      if (deptTickets.length === 0) {
+      // Toggle: if clicking the same dept, collapse it
+      if (currentExpandedDept === dept) {
         detailContainer.style.display = 'none';
+        currentExpandedDept = null;
         return;
       }
       
+      if (deptTickets.length === 0) {
+        detailContainer.style.display = 'none';
+        currentExpandedDept = null;
+        return;
+      }
+      
+      currentExpandedDept = dept;
       detailContainer.style.display = 'block';
       detailContainer.innerHTML = `
         <div style="border-top: 1px solid var(--border); padding-top: var(--space-3); margin-top: var(--space-2);">
