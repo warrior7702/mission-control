@@ -1933,7 +1933,12 @@
         return;
       }
 
-      container.innerHTML = agents.map(agent => {
+      // Filter out test agents
+      const filteredAgents = agents.filter(agent => 
+        !agent.agentId.toLowerCase().includes('test')
+      );
+      
+      container.innerHTML = filteredAgents.map(agent => {
         const isOnline = agent.status === 'online';
         const minutes = agent.minutesSince || 0;
         const timeAgo = minutes < 1 ? 'Just now' : 
