@@ -10,6 +10,7 @@ const { exec } = require('child_process');
 const { promisify } = require('util');
 const fs = require('fs');
 const path = require('path');
+const { setupAuth, ensureAuthenticated } = require('./auth');
 
 const execAsync = promisify(exec);
 const app = express();
@@ -119,8 +120,16 @@ function clearCache() {
 // ============================================================================
 // MIDDLEWARE
 // ============================================================================
+// Setup Azure AD authentication
+setupAuth(app);
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
+
+// Protect dashboard route
+app.get('/', ensureAuthenticated, (req, res, next) => {
+  next();
+});
 
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');

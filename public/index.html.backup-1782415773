@@ -1112,31 +1112,28 @@
         </div>
       </div>
 
-      <!-- Monthly Stats + ClickUp Side-by-Side -->
-      <div class="grid" style="margin-bottom: var(--space-5);">
-        <!-- Monthly Stats Bar Chart -->
-        <div class="card card-half" data-glow="cyan">
-          <div class="card-header">
-            <div class="card-title">
-              📊 Closed This Month
-              <span class="badge" id="monthly-closed-count">0</span>
-            </div>
-          </div>
-          <div id="monthly-stats-content">
-            <div class="loading">Loading stats...</div>
+      <!-- Monthly Stats Bar Chart -->
+      <div class="card card-wide" data-glow="cyan" style="margin-bottom: var(--space-5);">
+        <div class="card-header">
+          <div class="card-title">
+            📊 Closed This Month
+            <span class="badge" id="monthly-closed-count">0</span>
           </div>
         </div>
+        <div id="monthly-stats-content">
+          <div class="loading">Loading stats...</div>
+        </div>
+      </div>
 
-        <!-- ClickUp Tickets Pie Chart -->
-        <div class="card card-half" data-glow="slate" style="animation-delay: 120ms;">
-          <div class="card-header" id="clickup-header">
-            <div class="card-title">
-              <span id="clickup-title-text">📋 ClickUp Tickets</span>
-              <span class="badge" id="tickets-count">0</span>
-            </div>
+      <!-- ClickUp Tickets -->
+      <div class="card card-wide" data-glow="slate" style="margin-bottom: var(--space-5); animation-delay: 120ms;">
+        <div class="card-header" id="clickup-header">
+          <div class="card-title">
+            <span id="clickup-title-text">📋 ClickUp Tickets</span>
+            <span class="badge" id="tickets-count">0</span>
           </div>
-          <div id="tickets-content"></div>
         </div>
+        <div id="tickets-content"></div>
       </div>
 
       <!-- Ticket Insights -->
@@ -1763,16 +1760,12 @@
       }
     }
 
-    // Store current tickets for pie chart interaction
-    let currentTicketsData = null;
-    
     function renderTickets(tickets) {
       const container = document.getElementById('tickets-content');
       const count = document.getElementById('tickets-count');
       const depts = tickets.departments || {};
       const total = tickets.total || 0;
       
-      currentTicketsData = tickets;
       count.textContent = total;
       
       if (total === 0) {
@@ -1781,124 +1774,42 @@
       }
       
       const deptConfig = {
-        'Unassigned': { icon: '🔴', color: '#F87171', class: 'unassigned' },  // --accent-red
-        'IT': { icon: '💻', color: '#3b82f6', class: 'it' },                  // Matches .bar.it gradient start
-        'Maintenance': { icon: '🔧', color: '#f59e0b', class: 'maintenance' }, // Matches .bar.maintenance gradient start
-        'Cleaning': { icon: '🧹', color: '#10b981', class: 'cleaning' }       // Matches .bar.cleaning gradient start
+        'Unassigned': { icon: '🔴', class: 'unassigned', alwaysExpanded: true },
+        'IT': { icon: '💻', class: 'it', alwaysExpanded: false },
+        'Maintenance': { icon: '🔧', class: 'maintenance', alwaysExpanded: false },
+        'Cleaning': { icon: '🧹', class: 'cleaning', alwaysExpanded: false }
       };
       
-      // Build pie chart
-      const deptOrder = ['IT', 'Maintenance', 'Cleaning', 'Unassigned'];
-      const segments = [];
-      let startAngle = -90; // Start at top
+      const deptOrder = ['Unassigned', 'IT', 'Maintenance', 'Cleaning'];
+      let html = '';
       
       deptOrder.forEach(dept => {
         const items = depts[dept] || [];
         if (items.length === 0) return;
         
-        const percentage = (items.length / total) * 100;
-        const angle = (percentage / 100) * 360;
-        const config = deptConfig[dept];
+        const config = deptConfig[dept] || { icon: '📌', class: 'unassigned', alwaysExpanded: false };
+        const isUnassigned = dept === 'Unassigned';
+        const countClass = isUnassigned ? 'badge-red' : 'badge';
+        const expandClass = config.alwaysExpanded ? 'always-expanded' : '';
+        const collapseIcon = config.alwaysExpanded ? '' : '<span class="collapse-icon">▼</span>';
         
-        segments.push({
-          dept,
-          count: items.length,
-          percentage: percentage.toFixed(1),
-          startAngle,
-          endAngle: startAngle + angle,
-          color: config.color,
-          icon: config.icon
-        });
-        
-        startAngle += angle;
+        html += `
+          <div class="dept-section" data-dept="${dept}">
+            <div class="dept-header ${config.class}" onclick="toggleSection('${dept}')">
+              <span><span class="dept-icon">${config.icon}</span> ${dept}</span>
+              <span style="display: flex; align-items: center; gap: 8px;">
+                <span class="${countClass}">${items.length}</span>
+                ${collapseIcon}
+              </span>
+            </div>
+            <div class="dept-content ${expandClass}" id="dept-${dept}">
+              ${items.map(ticket => renderTicketItem(ticket)).join('')}
+            </div>
+          </div>
+        `;
       });
       
-      // Create SVG pie chart (200x200 center, responsive container)
-      const pieSize = 200;
-      const radius = 80;
-      const centerX = pieSize / 2;
-      const centerY = pieSize / 2;
-      
-      let pathsHtml = segments.map((seg, i) => {
-        const largeArc = (seg.endAngle - seg.startAngle) > 180 ? 1 : 0;
-        const startRad = (seg.startAngle * Math.PI) / 180;
-        const endRad = (seg.endAngle * Math.PI) / 180;
-        
-        const x1 = centerX + radius * Math.cos(startRad);
-        const y1 = centerY + radius * Math.sin(startRad);
-        const x2 = centerX + radius * Math.cos(endRad);
-        const y2 = centerY + radius * Math.sin(endRad);
-        
-        return `
-          <path 
-            d="M ${centerX} ${centerY} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z"
-            fill="${seg.color}"
-            opacity="0.9"
-            style="cursor: pointer; transition: opacity 0.2s;"
-            data-dept="${seg.dept}"
-            onmouseover="this.style.opacity='1'"
-            onmouseout="this.style.opacity='0.9'"
-            onclick="showDeptTickets('${seg.dept}')"
-          />
-        `;
-      }).join('');
-      
-      // Legend
-      let legendHtml = segments.map(seg => `
-        <div style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: background 0.2s;" 
-             onclick="showDeptTickets('${seg.dept}')" 
-             onmouseover="this.style.background='rgba(255,255,255,0.05)'" 
-             onmouseout="this.style.background='transparent'">
-          <div style="width: 12px; height: 12px; border-radius: 3px; background: ${seg.color}; flex-shrink: 0;"></div>
-          <span style="font-size: 0.85rem; color: var(--text-secondary);">${seg.icon} ${seg.dept}</span>
-          <span style="margin-left: auto; font-weight: 600; color: var(--text-primary);">${seg.count}</span>
-        </div>
-      `).join('');
-      
-      container.innerHTML = `
-        <div style="display: flex; align-items: center; gap: var(--space-4); padding: var(--space-3);">
-          <div style="flex-shrink: 0;">
-            <svg width="${pieSize}" height="${pieSize}" viewBox="0 0 ${pieSize} ${pieSize}">
-              ${pathsHtml}
-            </svg>
-          </div>
-          <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
-            ${legendHtml}
-          </div>
-        </div>
-        <div id="dept-detail" style="padding: 0 var(--space-3) var(--space-3); display: none;"></div>
-      `;
-    }
-    
-    let currentExpandedDept = null;
-    
-    function showDeptTickets(dept) {
-      if (!currentTicketsData) return;
-      
-      const deptTickets = currentTicketsData.departments[dept] || [];
-      const detailContainer = document.getElementById('dept-detail');
-      
-      // Toggle: if clicking the same dept, collapse it
-      if (currentExpandedDept === dept) {
-        detailContainer.style.display = 'none';
-        currentExpandedDept = null;
-        return;
-      }
-      
-      if (deptTickets.length === 0) {
-        detailContainer.style.display = 'none';
-        currentExpandedDept = null;
-        return;
-      }
-      
-      currentExpandedDept = dept;
-      detailContainer.style.display = 'block';
-      detailContainer.innerHTML = `
-        <div style="border-top: 1px solid var(--border); padding-top: var(--space-3); margin-top: var(--space-2);">
-          <div style="font-size: 0.9rem; font-weight: 600; margin-bottom: var(--space-2); color: var(--text-primary);">${dept} Tickets (${deptTickets.length})</div>
-          ${deptTickets.map(ticket => renderTicketItem(ticket)).join('')}
-        </div>
-      `;
+      container.innerHTML = html;
     }
 
     function renderApprovals(approvals) {
@@ -2205,14 +2116,7 @@ function runHealthAction(script) {
       
       return `
         <div class="item">
-          <div class="item-title">
-            <a href="${ticket.url}" target="_blank" rel="noopener noreferrer" 
-               style="color: inherit; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;"
-               onmouseover="this.style.color='var(--accent-blue)'"
-               onmouseout="this.style.color='inherit'">
-              ${statusEmoji} ${priorityEmoji} ${ticket.name}
-            </a>
-          </div>
+          <div class="item-title">${statusEmoji} ${priorityEmoji} ${ticket.name}</div>
           <div class="item-meta">Status: ${ticket.status} | Assignee: ${assignee}</div>
           <div class="actions">
             <button class="btn-secondary" onclick="resolveTicket('${ticket.id}')">Resolve</button>
@@ -2322,41 +2226,24 @@ function runHealthAction(script) {
       healthFlashOpen = true;
     });
 
-    let currentUserName = 'User';
-
-    async function fetchUser() {
-      try {
-        const response = await fetch(`${API_BASE}/user`);
-        if (response.ok) {
-          const user = await response.json();
-          currentUserName = user.firstName || user.displayName || 'User';
-          updateHeader();
-        }
-      } catch (error) {
-        console.error('Failed to fetch user:', error);
-        currentUserName = 'User';
-      }
-    }
-
     function updateHeader() {
       const now = new Date();
       const hour = now.getHours();
       const greetings = [
-        { start: 0, end: 5, text: 'Late night' },
-        { start: 5, end: 12, text: 'Good morning' },
-        { start: 12, end: 17, text: 'Good afternoon' },
-        { start: 17, end: 24, text: 'Good evening' }
+        { start: 0, end: 5, text: 'Late night, Billy' },
+        { start: 5, end: 12, text: 'Good morning, Billy' },
+        { start: 12, end: 17, text: 'Good afternoon, Billy' },
+        { start: 17, end: 24, text: 'Good evening, Billy' }
       ];
       const greeting = greetings.find(g => hour >= g.start && hour < g.end);
       if (greeting) {
-        document.getElementById('greeting-text').textContent = `${greeting.text}, ${currentUserName}`;
+        document.getElementById('greeting-text').textContent = greeting.text;
       }
 
       const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
       document.getElementById('current-time').textContent = now.toLocaleDateString('en-US', options);
     }
 
-    fetchUser();
     updateHeader();
     setInterval(updateHeader, 60000);
     load30DayData();

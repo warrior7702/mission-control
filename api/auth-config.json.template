@@ -1,0 +1,23 @@
+{
+  "credentials": {
+    "tenantID": "YOUR_TENANT_ID",
+    "clientID": "YOUR_CLIENT_ID",
+    "clientSecret": "YOUR_CLIENT_SECRET"
+  },
+  "metadata": {
+    "authority": "login.microsoftonline.com",
+    "discovery": ".well-known/openid-configuration",
+    "version": "v2.0"
+  },
+  "settings": {
+    "validateIssuer": true,
+    "passReqToCallback": false,
+    "loggingLevel": "info"
+  },
+  "redirectUrl": "https://bobbot.ngrok.app/auth/callback",
+  "destroySessionUrl": "https://bobbot.ngrok.app/",
+  "allowHttpForRedirectUrl": false,
+  "cookieEncryptionKeys": [
+    { "key": "GENERATE_RANDOM_32_CHAR_STRING_HERE", "iv": "GENERATE_RANDOM_12_CHAR_STRING" }
+  ]
+}
