@@ -14,6 +14,7 @@ const { setupAuth, ensureAuthenticated } = require('./auth');
 
 const execAsync = promisify(exec);
 const app = express();
+app.set('trust proxy', 1); // Trust ngrok HTTPS proxy for secure cookies
 const PORT = 3737;
 const WORKSPACE = process.env.HOME + '/.openclaw/workspace';
 const CACHE_TTL = 60000; // 60 second cache
