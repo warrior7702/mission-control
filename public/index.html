@@ -1105,7 +1105,7 @@
         <div class="health-badge healthy" id="health-badge">
           🟢 All Healthy
         </div>
-        <div class="ws-indicator disconnected" id="ws-indicator">
+        <div class="ws-indicator" style="display: none;" disconnected" id="ws-indicator">
           <span class="ws-indicator-dot"></span>
           <span id="ws-status">Connecting...</span>
         </div>
@@ -2553,7 +2553,7 @@ function runHealthAction(script) {
     
     // Initial fetch and auto-refresh (fallback if WebSocket fails)
     fetchDashboard();
-    connectWebSocket();
+    // connectWebSocket(); // Disabled - using polling fallback
     loadUserProfile();
     setInterval(fetchDashboard, 60000); // Fallback refresh every 60 seconds
   </script>
