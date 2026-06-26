@@ -120,11 +120,30 @@ function clearCache() {
 // ============================================================================
 // MIDDLEWARE
 // ============================================================================
+// Body parsers MUST come before auth routes (Microsoft sends form-encoded POST to /auth/callback)
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+
 // Setup Azure AD authentication
 setupAuth(app);
 
-app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
+
+// Auth error page (prevents redirect loop on failed login)
+app.get('/auth/error', (req, res) => {
+  res.status(401).send(`
+    <!DOCTYPE html><html><head><title>Login Failed</title><style>
+      body{font-family:sans-serif;background:#0a1628;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;text-align:center}
+      .card{background:rgba(255,255,255,0.05);padding:2rem;border-radius:12px;max-width:400px}
+      h1{color:#F87171}
+      a{color:#75D3F2}
+    </style></head><body>
+    <div class="card"><h1>Authentication Failed</h1>
+    <p>Microsoft login did not complete.</p>
+    <p><a href="/auth/logout">Clear Session</a> | <a href="/auth/login">Try Again</a></p></div>
+    </body></html>
+  `);
+});
 
 // Protect dashboard route
 app.get('/', ensureAuthenticated, (req, res, next) => {

@@ -110,12 +110,12 @@ function setupAuth(app) {
 
   // Auth routes
   app.get('/auth/login', passport.authenticate('azuread-openidconnect', { 
-    failureRedirect: '/' 
+    failureRedirect: '/auth/error' 
   }));
 
   app.post('/auth/callback',
     passport.authenticate('azuread-openidconnect', { 
-      failureRedirect: '/' 
+      failureRedirect: '/auth/error' 
     }),
     (req, res) => {
       const returnTo = req.session.returnTo || '/';
