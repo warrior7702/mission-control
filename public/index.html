@@ -269,6 +269,27 @@
       -webkit-text-fill-color: transparent;
     }
 
+
+    .user-badge {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-3);
+      background: var(--surface);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      font-size: 0.875rem;
+    }
+
+    .user-badge .user-name {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    .user-badge .user-email {
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+    }
     .health-badge {
       padding: var(--space-2) var(--space-4);
       border-radius: var(--radius-xl);
@@ -1077,6 +1098,10 @@
       <nav class="header-nav">
       </nav>
       <div style="display: flex; align-items: center; gap: var(--space-3);">
+        <div class="user-badge" id="user-badge" style="display: none;">
+          <span class="user-name" id="user-name">...</span>
+          <span class="user-email" id="user-email"></span>
+        </div>
         <div class="health-badge healthy" id="health-badge">
           🟢 All Healthy
         </div>
@@ -1156,7 +1181,7 @@
 
       <div class="grid">
         <!-- PCO Approvals -->
-        <div class="card card-half" data-glow="blue">
+        <div class="card card-half" id="pco-card" data-glow="blue">
           <div class="card-header">
             <div class="card-title">
               📅 PCO Pending Approvals
@@ -1642,6 +1667,19 @@
       `;
     }
 
+
+    async function loadUserProfile() {
+      try {
+        const user = await fetch('/api/user').then(r => r.json());
+        if (user.authenticated) {
+          document.getElementById('user-name').textContent = user.displayName || user.firstName || 'User';
+          document.getElementById('user-email').textContent = user.email || '';
+          document.getElementById('user-badge').style.display = 'flex';
+        }
+      } catch (e) {
+        console.error('Failed to load user profile:', e);
+      }
+    }
     async function loadInsights() {
       try {
         const res = await fetch(`${API_BASE}/ticket-analytics`);
@@ -1904,9 +1942,25 @@
     function renderApprovals(approvals) {
       const container = document.getElementById('approvals-content');
       const count = document.getElementById('approvals-count');
+      const pcoCard = document.getElementById('pco-card');
+
+      // Hide card if user has no approval groups
+      if (approvals.approvalGroups && approvals.approvalGroups.length === 0) {
+        pcoCard.style.display = 'none';
+        return;
+      }
+
+      // Show card
+      pcoCard.style.display = 'block';
 
       if (!approvals.approvals || approvals.approvals.length === 0) {
-        container.innerHTML = '<div class="empty">No pending approvals</div>';
+        container.innerHTML = `
+          <div class="empty-state" style="text-align: center; padding: var(--space-6); color: var(--text-secondary);">
+            <div style="font-size: 2rem; margin-bottom: var(--space-3); opacity: 0.5;">📭</div>
+            <p style="font-weight: 600; color: var(--text-primary); margin-bottom: var(--space-2);">No pending approvals</p>
+            <small style="font-size: 0.875rem; opacity: 0.8;">All caught up! Check back later.</small>
+          </div>
+        `;
         count.textContent = '0';
         return;
       }
@@ -1927,7 +1981,6 @@
         </div>
       `).join('');
     }
-
     function renderSchedules(schedules) {
       const container = document.getElementById('schedules-content');
       const count = document.getElementById('schedules-count');
@@ -2501,6 +2554,7 @@ function runHealthAction(script) {
     // Initial fetch and auto-refresh (fallback if WebSocket fails)
     fetchDashboard();
     connectWebSocket();
+    loadUserProfile();
     setInterval(fetchDashboard, 60000); // Fallback refresh every 60 seconds
   </script>
   <footer>
