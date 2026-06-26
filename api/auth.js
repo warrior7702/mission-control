@@ -27,7 +27,7 @@ if (authConfig) {
   const strategy = new OIDCStrategy({
     identityMetadata: `https://${authConfig.metadata.authority}/${authConfig.credentials.tenantID}/${authConfig.metadata.version}/${authConfig.metadata.discovery}`,
     clientID: authConfig.credentials.clientID,
-    responseType: 'code id_token',
+    responseType: 'code',
     responseMode: 'form_post',
     redirectUrl: authConfig.redirectUrl,
     allowHttpForRedirectUrl: authConfig.allowHttpForRedirectUrl,
