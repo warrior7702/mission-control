@@ -384,6 +384,66 @@ app.get('/api/monthly-stats', async (req, res) => {
 });
 
 // ============================================================================
+// NEW ENDPOINTS — Scripts exist on Finn-1, just not wired in server.js
+// ============================================================================
+
+// Daily ticket trend (30-day chart data)
+app.get('/api/daily-trend', async (req, res) => {
+  try {
+    const { stdout } = await execAsync(
+      `cd ${WORKSPACE} && python3 scripts/clickup-daily-trend.py --json 2>/dev/null || echo '[]'`,
+      { timeout: 10000 }
+    );
+    res.json(JSON.parse(stdout));
+  } catch (error) {
+    res.json([]);
+  }
+});
+
+// Ticket analytics / insights
+app.get('/api/ticket-analytics', async (req, res) => {
+  try {
+    const { stdout } = await execAsync(
+      `cd ${WORKSPACE} && python3 scripts/ticket-analytics.py --json 2>/dev/null || echo '{"status":"pending"}'`,
+      { timeout: 15000 }
+    );
+    res.json(JSON.parse(stdout));
+  } catch (error) {
+    res.json({ status: 'pending' });
+  }
+});
+
+// Alert history (7 days)
+app.get('/api/alert-history', async (req, res) => {
+  try {
+    const { stdout } = await execAsync(
+      `cd ${WORKSPACE} && python3 scripts/alert-history.py --days 7 --json 2>/dev/null || echo '{"total":0,"recent":[]}'`,
+      { timeout: 10000 }
+    );
+    res.json(JSON.parse(stdout));
+  } catch (error) {
+    res.json({ total: 0, recent: [], patterns: {} });
+  }
+});
+
+// Health action runner (POST) — runs script by name
+app.post('/api/health/action', async (req, res) => {
+  const { script } = req.body;
+  if (!script) {
+    return res.status(400).json({ error: 'script required' });
+  }
+  try {
+    const scriptPath = `${WORKSPACE}/scripts/${script}.sh`;
+    exec(`cd ${WORKSPACE} && bash ${scriptPath} > /tmp/${script}.log 2>&1 &`, (err) => {
+      if (err) console.error(`Health action ${script} failed:`, err);
+    });
+    res.json({ success: true, script, started: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================================================
 // ACTIONS
 // ============================================================================
 
