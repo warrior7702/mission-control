@@ -187,17 +187,17 @@ async function getClickUpTickets() {
   }
 }
 
-async function getPCOApprovals() {
-  const cached = getCache('approvals');
+async function getPCOApprovals(userEmail = "billy.nelms@fbca.org") {
+  const cached = getCache(`approvals:${userEmail}`);
   if (cached) return cached;
 
   try {
     const { stdout } = await execAsync(
-      `cd ${WORKSPACE} && python3 scripts/pco-approve.py list --json`,
+      `cd ${WORKSPACE} && python3 scripts/pco-approve.py list --json --email="${userEmail}"`,
       { timeout: 10000 }
     );
     const result = JSON.parse(stdout);
-    setCache('approvals', result);
+    setCache(`approvals:${userEmail}`, { ...result, userEmail });
     return result;
   } catch (error) {
     return { error: error.message, approvals: [] };
@@ -329,11 +329,12 @@ app.get('/api/clear-cache', (req, res) => {
 });
 
 // Dashboard data (all-in-one, from cache if fresh)
-app.get('/api/dashboard', async (req, res) => {
+app.get('/api/dashboard', ensureAuthenticated, async (req, res) => {
   try {
+  const userEmail = req.user?.email || 'billy.nelms@fbca.org';
     const [tickets, approvals, schedules, email, agents, health] = await Promise.all([
       getClickUpTickets(),
-      getPCOApprovals(),
+      getPCOApprovals(userEmail),
       getDoorSchedules(),
       getEmailStatus(),
       getAgentStatus(),
@@ -356,7 +357,7 @@ app.get('/api/dashboard', async (req, res) => {
 });
 
 app.get('/api/tickets', async (req, res) => { res.json(await getClickUpTickets()); });
-app.get('/api/approvals', async (req, res) => { res.json(await getPCOApprovals()); });
+app.get('/api/approvals', ensureAuthenticated, async (req, res) => { res.json(await getPCOApprovals(req.user?.email || "billy.nelms@fbca.org")); });
 app.get('/api/schedules', async (req, res) => { res.json(await getDoorSchedules()); });
 app.get('/api/email', async (req, res) => { res.json(await getEmailStatus()); });
 app.get('/api/agents', async (req, res) => { res.json(await getAgentStatus()); });
