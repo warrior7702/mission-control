@@ -461,7 +461,44 @@ app.post('/api/health/action', async (req, res) => {
 // ACTIONS
 // ============================================================================
 
-// Close ClickUp ticket
+// Update ClickUp ticket status (any status)
+app.post('/api/tickets/:id/status', async (req, res) => {
+  const { id } = req.params;
+  const { status, note } = req.body;
+
+  try {
+    await execAsync(
+      `cd ${WORKSPACE} && python3 -c "
+import requests, os
+
+token = None
+with open('${WORKSPACE}/.env') as f:
+    for line in f:
+        if line.startswith('CLICKUP_API_TOKEN='):
+            token = line.split('=', 1)[1].strip()
+
+headers = {'Authorization': token}
+r = requests.put(f'https://api.clickup.com/api/v2/task/{id}',
+    headers=headers, json={'status': '${status}'})
+if r.status_code == 200:
+    if '${note or ''}':
+        requests.post(f'https://api.clickup.com/api/v2/task/{id}/comment',
+            headers=headers, json={'comment_text': '${(note || '').replace(/'/g, "\\'")}'})
+    print('OK')
+else:
+    print('FAIL', r.status_code)
+"`,
+      { timeout: 10000 }
+    );
+
+    clearCache();
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Close ClickUp ticket (legacy compat)
 app.post('/api/tickets/:id/close', async (req, res) => {
   const { id } = req.params;
   const { resolution } = req.body;

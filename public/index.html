@@ -2236,39 +2236,54 @@ function runHealthAction(script) {
     }
 
     function renderTicketItem(ticket) {
-      const statusEmoji = {
-        'unassigned': '🆕',
-        'working': '⚙️',
-        'paused': '⏸️',
-        'upcoming': '📅'
-      }[ticket.status] || '📌';
+      const statusConfig = {
+        'open': { emoji: '🟢', label: 'Open' },
+        'todo': { emoji: '📝', label: 'To Do' },
+        'new': { emoji: '🆕', label: 'New' },
+        'in progress': { emoji: '🔄', label: 'In Progress' },
+        'in review': { emoji: '👀', label: 'In Review' },
+        'waiting on client': { emoji: '⏳', label: 'Waiting on Client' },
+        'in development': { emoji: '💻', label: 'In Development' },
+        'on hold / paused': { emoji: '⏸️', label: 'On Hold / Paused' },
+        'resolved': { emoji: '✅', label: 'Resolved' },
+        'closed': { emoji: '🔒', label: 'Closed' }
+      };
+      
+      const config = statusConfig[ticket.status] || { emoji: '📌', label: ticket.status };
       
       const priorityEmoji = {
-        'urgent': '🔴',
-        '1': '🔴',
-        'high': '🟠',
-        '2': '🟠',
-        'normal': '🟡',
-        '3': '🟡'
+        'urgent': '🔴', '1': '🔴',
+        'high': '🟠', '2': '🟠',
+        'normal': '🟡', '3': '🟡'
       }[ticket.priority] || '';
       
       const assignee = ticket.assignees && ticket.assignees.length > 0 
         ? ticket.assignees[0].username 
         : 'unassigned';
       
+      const options = Object.entries(statusConfig).map(([key, val]) => 
+        `<option value="${key}" ${ticket.status === key ? 'selected' : ''}>${val.emoji} ${val.label}</option>`
+      ).join('');
+
       return `
-        <div class="item">
+        <div class="item" style="border-left: 3px solid ${config.emoji === '🟢' ? '#34D399' : config.emoji === '🟡' ? '#FBBF24' : '#38BDF8'}40;">
           <div class="item-title">
             <a href="${ticket.url}" target="_blank" rel="noopener noreferrer" 
                style="color: inherit; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;"
                onmouseover="this.style.color='var(--accent-blue)'"
                onmouseout="this.style.color='inherit'">
-              ${statusEmoji} ${priorityEmoji} ${ticket.name}
+              ${config.emoji} ${priorityEmoji} ${ticket.name}
             </a>
           </div>
-          <div class="item-meta">Status: ${ticket.status} | Assignee: ${assignee}</div>
-          <div class="actions">
-            <button class="btn-secondary" onclick="resolveTicket('${ticket.id}')">Resolve</button>
+          <div class="item-meta">Status: <strong style="color: var(--text-primary);">${config.label}</strong> | Assignee: ${assignee}</div>
+          <div class="actions" style="gap: 8px; align-items: center;">
+            <select onchange="changeTicketStatus('${ticket.id}', this.value, this)"
+                    style="min-width: 160px; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); background: rgba(15,23,42,0.6); color: var(--text-secondary); font-size: 0.85rem; font-family: inherit; cursor: pointer; transition: border-color 0.15s;"
+                    onfocus="this.style.borderColor='var(--accent-blue)'"
+                    onblur="this.style.borderColor='var(--border)'">
+              ${options}
+            </select>
+            <button class="btn-secondary" style="padding: 6px 14px; font-size: 0.8rem;" onclick="resolveTicket('${ticket.id}')">✅ Resolve + Note</button>
           </div>
         </div>
       `;
@@ -2304,6 +2319,29 @@ function runHealthAction(script) {
         fetchDashboard();
       } catch (error) {
         alert('Failed to resolve ticket: ' + error.message);
+      }
+    }
+
+    async function changeTicketStatus(id, status, selectEl) {
+      const label = selectEl ? selectEl.options[selectEl.selectedIndex].text : status;
+      if (!confirm(`Change ticket status to "${label}"?`)) {
+        // Reset dropdown
+        fetchDashboard();
+        return;
+      }
+      selectEl.style.opacity = '0.5';
+      selectEl.disabled = true;
+      try {
+        await fetch(`${API_BASE}/tickets/${id}/status`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status })
+        });
+        fetchDashboard();
+      } catch (error) {
+        alert('Failed: ' + error.message);
+        selectEl.style.opacity = '1';
+        selectEl.disabled = false;
       }
     }
 
