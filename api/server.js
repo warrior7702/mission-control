@@ -215,11 +215,24 @@ async function getDoorSchedules() {
     });
     const data = await response.json();
 
-    const today = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const fmt = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Chicago',
+      year: 'numeric', month: '2-digit', day: '2-digit'
+    });
+    const today = fmt.format(now);
+
     const todaySchedules = data.schedules.filter(s => {
-      const schedDate = new Date(s.startTime).toISOString().split('T')[0];
       const active = s.isActive !== undefined ? s.isActive : true;
-      return schedDate === today && active;
+      if (!active) return false;
+
+      const start = new Date(s.startTime);
+      const end = new Date(s.endTime);
+      const startDate = fmt.format(start);
+      const endDate = fmt.format(end);
+
+      // Include if starts today, ends today, or is currently running
+      return startDate === today || endDate === today || (start <= now && now <= end);
     });
 
     const result = { schedules: todaySchedules, totalToday: todaySchedules.length };
