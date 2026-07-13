@@ -35,10 +35,6 @@ Live dashboard at **https://bobbot.ngrok.app**
   |-------------|-------|
   | `DEPLOY_WEBHOOK` | `https://bobbot.ngrok.app/webhook/deploy` |
 
-### 3. Optional: Add Cornerstone as Collaborator
-- **Settings → Collaborators → Add people**
-- Invite: `cornerstone-username@github`
-- Or use this token approach if Cornerstone doesn't have a GitHub account:
 
 ## 🔑 Token Approach (No GitHub Account Needed)
 
@@ -58,7 +54,6 @@ cat .deploy_key  # <-- secret key (keep private!)
 - Paste the `.deploy_key.pub` content
 - ✅ Allow write access
 
-**Tell Cornerstone the SSH URL:**
 ```
 git clone git@github.com:YOUR_USER/mission-control.git
 # then edit, commit, push — auto-deploys!
@@ -67,7 +62,6 @@ git clone git@github.com:YOUR_USER/mission-control.git
 ## ✅ How Deploy Works After Setup
 
 ```
-Cornerstone edits on Mac → git push origin main
   ↓
 GitHub Actions triggers
   ↓

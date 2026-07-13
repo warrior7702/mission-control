@@ -118,6 +118,10 @@ function clearCache() {
   cache.clear();
 }
 
+function shellQuote(value = '') {
+  return `'${String(value).replace(/'/g, `'"'"'`)}'`;
+}
+
 // ============================================================================
 // MIDDLEWARE
 // ============================================================================
@@ -466,28 +470,36 @@ app.post('/api/tickets/:id/status', async (req, res) => {
   const { id } = req.params;
   const { status, note } = req.body;
 
+  if (!status) {
+    return res.status(400).json({ error: 'status required' });
+  }
+
   try {
+    const script = [
+      'import os, requests, sys',
+      `task_id = ${JSON.stringify(String(id))}`,
+      `status = ${JSON.stringify(String(status))}`,
+      `note = ${JSON.stringify(String(note || ''))}`,
+      `workspace = ${JSON.stringify(WORKSPACE)}`,
+      'token = None',
+      "with open(os.path.join(workspace, '.env')) as env_file:",
+      '    for line in env_file:',
+      "        if line.startswith('CLICKUP_API_TOKEN='):",
+      "            token = line.split('=', 1)[1].strip()",
+      '            break',
+      "if not token:",
+      "    raise RuntimeError('CLICKUP_API_TOKEN missing')",
+      "headers = {'Authorization': token}",
+      "url = f'https://api.clickup.com/api/v2/task/{task_id}'",
+      "response = requests.put(url, headers=headers, json={'status': status}, timeout=10)",
+      'response.raise_for_status()',
+      'if note:',
+      "    requests.post(f'{url}/comment', headers=headers, json={'comment_text': note}, timeout=10).raise_for_status()",
+      "print('OK')",
+    ].join('\n');
+
     await execAsync(
-      `cd ${WORKSPACE} && python3 -c "
-import requests, os
-
-token = None
-with open('${WORKSPACE}/.env') as f:
-    for line in f:
-        if line.startswith('CLICKUP_API_TOKEN='):
-            token = line.split('=', 1)[1].strip()
-
-headers = {'Authorization': token}
-r = requests.put(f'https://api.clickup.com/api/v2/task/{id}',
-    headers=headers, json={'status': '${status}'})
-if r.status_code == 200:
-    if '${note or ''}':
-        requests.post(f'https://api.clickup.com/api/v2/task/{id}/comment',
-            headers=headers, json={'comment_text': '${(note || '').replace(/'/g, "\\'")}'})
-    print('OK')
-else:
-    print('FAIL', r.status_code)
-"`,
+      `python3 -c ${shellQuote(script)}`,
       { timeout: 10000 }
     );
 
@@ -501,30 +513,33 @@ else:
 // Close ClickUp ticket (legacy compat)
 app.post('/api/tickets/:id/close', async (req, res) => {
   const { id } = req.params;
-  const { resolution } = req.body;
+  const { resolution = '' } = req.body;
 
   try {
+    const script = [
+      'import os, requests',
+      `task_id = ${JSON.stringify(String(id))}`,
+      `resolution = ${JSON.stringify(String(resolution || ''))}`,
+      `workspace = ${JSON.stringify(WORKSPACE)}`,
+      'token = None',
+      "with open(os.path.join(workspace, '.env')) as env_file:",
+      '    for line in env_file:',
+      "        if line.startswith('CLICKUP_API_TOKEN='):",
+      "            token = line.split('=', 1)[1].strip()",
+      '            break',
+      "if not token:",
+      "    raise RuntimeError('CLICKUP_API_TOKEN missing')",
+      "headers = {'Authorization': token}",
+      "url = f'https://api.clickup.com/api/v2/task/{task_id}'",
+      "response = requests.put(url, headers=headers, json={'status': 'resolved'}, timeout=10)",
+      'response.raise_for_status()',
+      'if resolution:',
+      "    requests.post(f'{url}/comment', headers=headers, json={'comment_text': f'Resolution: {resolution}'}, timeout=10).raise_for_status()",
+      "print('OK')",
+    ].join('\n');
+
     await execAsync(
-      `cd ${WORKSPACE} && python3 -c "
-import requests, os
-
-token = None
-with open('${WORKSPACE}/.env') as f:
-    for line in f:
-        if line.startswith('CLICKUP_API_TOKEN='):
-            token = line.split('=', 1)[1].strip()
-
-headers = {'Authorization': token}
-r = requests.put(f'https://api.clickup.com/api/v2/task/{id}',
-    headers=headers, json={'status': 'resolved'})
-if r.status_code == 200:
-    if '${resolution}':
-        requests.post(f'https://api.clickup.com/api/v2/task/{id}/comment',
-            headers=headers, json={'comment_text': 'Resolution: ${resolution}'})
-print('OK')
-else:
-    print('FAIL', r.status_code)
-"`,
+      `python3 -c ${shellQuote(script)}`,
       { timeout: 10000 }
     );
 

@@ -2122,7 +2122,7 @@
 
     function getAgentEmoji(agentId) {
       const emojis = {
-        cornerstone: '🪨', scout: '📡', doory: '🔧',
+        scout: '📡', doory: '🔧',
         spot: '📹', sentinel: '🛡️', bob: '🦦',
         dubya: '🎯', monty: '🐍'
       };
@@ -2237,16 +2237,11 @@ function runHealthAction(script) {
 
     function renderTicketItem(ticket) {
       const statusConfig = {
-        'open': { emoji: '🟢', label: 'Open' },
-        'todo': { emoji: '📝', label: 'To Do' },
-        'new': { emoji: '🆕', label: 'New' },
-        'in progress': { emoji: '🔄', label: 'In Progress' },
-        'in review': { emoji: '👀', label: 'In Review' },
-        'waiting on client': { emoji: '⏳', label: 'Waiting on Client' },
-        'in development': { emoji: '💻', label: 'In Development' },
-        'on hold / paused': { emoji: '⏸️', label: 'On Hold / Paused' },
-        'resolved': { emoji: '✅', label: 'Resolved' },
-        'closed': { emoji: '🔒', label: 'Closed' }
+        'unassigned': { emoji: '🆕', label: 'Unassigned' },
+        'working': { emoji: '⚙️', label: 'Working' },
+        'paused': { emoji: '⏸️', label: 'Paused' },
+        'upcoming': { emoji: '📅', label: 'Upcoming' },
+        'resolved': { emoji: '✅', label: 'Resolved' }
       };
       
       const config = statusConfig[ticket.status] || { emoji: '📌', label: ticket.status };
@@ -2283,7 +2278,7 @@ function runHealthAction(script) {
                     onblur="this.style.borderColor='var(--border)'">
               ${options}
             </select>
-            <button class="btn-secondary" style="padding: 6px 14px; font-size: 0.8rem;" onclick="resolveTicket('${ticket.id}')">✅ Resolve + Note</button>
+            <button class="btn-secondary" style="padding: 6px 14px; font-size: 0.8rem;" onclick="resolveTicket('${ticket.id}')">✅ Resolve</button>
           </div>
         </div>
       `;
@@ -2307,14 +2302,12 @@ function runHealthAction(script) {
 
     // Action handlers
     async function resolveTicket(id) {
-      const resolution = prompt('Resolution note:');
-      if (!resolution) return;
 
       try {
         await fetch(`${API_BASE}/tickets/${id}/close`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ resolution })
+          body: JSON.stringify({})
         });
         fetchDashboard();
       } catch (error) {

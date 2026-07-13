@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Release Notes — FBCA Mission Control</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-page: #060B14;
+      --bg-gradient-start: #060B14;
+      --bg-gradient-end: #0F172A;
+      --surface: rgba(30, 41, 59, 0.50);
+      --surface-elevated: rgba(30, 41, 59, 0.70);
+      --border: rgba(148, 163, 184, 0.10);
+      --border-hover: rgba(148, 163, 184, 0.18);
+      --text-primary: #F1F5F9;
+      --text-secondary: #94A3B8;
+      --text-muted: #64748B;
+      --accent-blue: #38BDF8;
+      --accent-green: #34D399;
+      --accent-amber: #FBBF24;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(160deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 60%, #1E293B 100%);
+      background-attachment: fixed;
+      color: var(--text-primary);
+      padding: 24px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-top: 4px;
+    }
+
+    a.back {
+      color: var(--accent-blue);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    a.back:hover { text-decoration: underline; }
+
+    .month-group {
+      margin-bottom: 32px;
+    }
+
+    .month-heading {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .entry {
+      background: var(--surface);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      margin-bottom: 12px;
+      transition: border-color 200ms, transform 200ms;
+    }
+
+    .entry:hover {
+      border-color: var(--border-hover);
+      transform: translateY(-1px);
+    }
+
+    .entry-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .entry-date {
+      font-size: 0.8rem;
+      color: var(--accent-blue);
+      font-weight: 600;
+    }
+
+    .entry-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .entry-body {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .entry-tags {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .entry-tag {
+      font-size: 0.75rem;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: var(--surface-elevated);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>📝 Release Notes</h1>
+        <div class="subtitle">What changed on FBCA Mission Control</div>
+      </div>
+      <a href="/" class="back">← Back to Dashboard</a>
+    </header>
+
+    <div class="month-group">
+      <div class="month-heading">June 2026</div>
+
+      <article class="entry">
+        <div class="entry-header">
+          <span class="entry-date">June 24, 2026</span>
+        </div>
+        <div class="entry-title">Dashboard design overhaul</div>
+        <div class="entry-body">
+          Rebuilt the visual layer with CSS custom properties, glassmorphism surfaces, and a proper 12-column bento grid. Added a time-aware hero greeting, staggered card entrance animations, and improved chart contrast.
+        </div>
+        <div class="entry-tags">
+          <span class="entry-tag">UI</span>
+          <span class="entry-tag">Design Tokens</span>
+          <span class="entry-tag">UX Review</span>
+        </div>
+      </article>
+
+      <article class="entry">
+        <div class="entry-header">
+          <span class="entry-date">June 24, 2026</span>
+        </div>
+        <div class="entry-title">Door schedules are now grouped by event</div>
+        <div class="entry-body">
+          Previously, the same event appeared once per door — four identical "FLX Gym - Wednesday" rows for four doors. Now they collapse into a single entry with all doors listed. Much faster to scan.
+        </div>
+        <div class="entry-tags">
+          <span class="entry-tag">UX</span>
+          <span class="entry-tag">Data Viz</span>
+        </div>
+      </article>
+
+      <article class="entry">
+        <div class="entry-header">
+          <span class="entry-date">June 24, 2026</span>
+        </div>
+        <div class="entry-title">Fixed invisible 30-day trend chart</div>
+        <div class="entry-body">
+          The line chart in "Tickets - Last 30 Days" was silently failing because demo data was generated but never assigned to the chart state variable. Fixed the data pipeline and bumped grid / label contrast so the chart is readable against the dark card surfaces.
+        </div>
+        <div class="entry-tags">
+          <span class="entry-tag">Bug Fix</span>
+          <span class="entry-tag">Charts</span>
+        </div>
+      </article>
+    </div>
+
+    <div class="month-group">
+      <div class="month-heading">May 2026</div>
+
+      <article class="entry">
+        <div class="entry-header">
+          <span class="entry-date">May 23, 2026</span>
+        </div>
+        <div class="entry-title">Added agent activity feed</div>
+        <div class="entry-body">
+          Dashboard now shows live agent heartbeats from B.O.B. and supporting agents. Each agent card shows last seen time, current task, capability tags, and recent action history.
+        </div>
+        <div class="entry-tags">
+          <span class="entry-tag">Feature</span>
+          <span class="entry-tag">Agents</span>
+        </div>
+      </article>
+
+      <article class="entry">
+        <div class="entry-header">
+          <span class="entry-date">May 21, 2026</span>
+        </div>
+        <div class="entry-title">Mission Control v2 API + door schedule creation</div>
+        <div class="entry-body">
+          Backend added a cached API layer, deploy webhook, and a <code>POST /api/schedules/create</code> endpoint so the dashboard can push new door unlock schedules directly from the UI.
+        </div>
+        <div class="entry-tags">
+          <span class="entry-tag">API</span>
+          <span class="entry-tag">Backend</span>
+        </div>
+      </article>
+    </div>
+
+    <div class="month-group">
+      <div class="month-heading">April 2026</div>
+
+      <article class="entry">
+        <div class="entry-header">
+          <span class="entry-date">April 1, 2026</span>
+        </div>
+        <div class="entry-title">Initial Mission Control launch</div>
+        <div class="entry-body">
+          First version of the FBCA Mission Control dashboard: ClickUp tickets, PCO pending approvals, today's door schedules, email status, and system health — all on one screen.
+        </div>
+        <div class="entry-tags">
+          <span class="entry-tag">Launch</span>
+        </div>
+      </article>
+    </div>
+  </div>
+</body>
+</html>
